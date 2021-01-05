@@ -51,7 +51,6 @@ class Fish(commands.Cog):
         C_fish_list = ['소라', '미역', '오징어', '한치']
 
         fish = random.choice(random_fish_list)
-        await ctx.delete_message(msg)
         if fish in A_fish_list:
             price = random.randint(500, 700)
             grade = 'A급'
