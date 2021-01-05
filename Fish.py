@@ -3,7 +3,7 @@ import asyncio
 from discord.ext import commands
 from discord.ext.commands import bot
 import random
-from dbjson import Database
+import sqlite3
 
 class Fish(commands.Cog):
     def __init__(self, bot):
@@ -11,12 +11,16 @@ class Fish(commands.Cog):
 
     @commands.command(name = '낚시')
     async def 낚시(self, ctx):
-        money_db = Database('database/Money.json')
+        money_db = 'Money.db'
+        conn = sqlite3.connect("Money.db", isolation_level=None)
+        c = conn.cursor()
+        c.execute("CREATE TABLE IF NOT EXISTS moneytable \
+            (id integer PRIMARY KEY, moneys text)")
         if str(ctx.author.id) in money_db:
             pass
         elif str(ctx.author.id) not in money_db:
-            embed = discord.Embed(title = '회원 가입 진행', description = '회원 정보를 찾을 수 없습니다. \n회원가입을 진행합니다..', colour = 0xFF00, inline=True)
-            embed.add_field(name = '이용 약관 동의', value = '아래의 이용약관을 읽고, \n이용약관에 동의하시면 회원가입이 완료됩니다. \n\n [이용약관](<https://cafe.naver.com/teampeanut/2>) [개인정보처리방침](<https://cafe.naver.com/teampeanut/3>)')
+            embed = discord.Embed(title = '회원 가입 진행', description = '회원 정보를 찾을 수 없습니다. \n회원가입을 진행합니다.', colour = 0xFF00, inline=True)
+            embed.add_field(name = '이용 약관 동의', value = '아래의 이용약관을 읽고, \n이용약관에 동의하시면 회원가입이 완료됩니다. \n\n[이용약관](<https://cafe.naver.com/teampeanut/2>) [개인정보처리방침](<https://cafe.naver.com/teampeanut/3>)')
             a = await ctx.send(embed=embed)
             await a.add_reaction('⭕')
             await a.add_reaction('❌')
@@ -24,8 +28,9 @@ class Fish(commands.Cog):
                 return user == ctx.author and str(reaction.emoji) == '⭕'
             try:
                 reaction, user = await self.bot.wait_for('reaction_add', timeout=60.0, check=check)
-                money_db[ctx.author.id] = '0'
-                money_db.commit()
+                c.execute("INSERT INTO moneytable(id, money) \
+                    VALUES(?,?)", \
+                    (ctx.author.id, '0'))
                 pass
             except asyncio.TimeoutError:
                 embed = discord.Embed(title = '시간 초과', description = '시간이 초과되었습니다. \n`+낚시` 명령어로 다시 회원가입을 진행해주세요.')
@@ -55,8 +60,7 @@ class Fish(commands.Cog):
             embed.add_field(name = '생선 가격', value = f'생선 가격 : {price}')
             embed.add_field(name = '생선 등급', value = f'생선 등급 : {grade}')
             await ctx.send(embed=embed)
-            money_db[str(ctx.author.id)] = money_db[int(ctx.author.id)] + int(price)
-            money_db.commit()
+            c.execute("UPDATE money SET moneys=? WHERE id=?", (ctx.author.id, int(price)))
         if fish in B_fish_list:
             price = random.randint(300, 500)
             grade = 'B급'
@@ -65,8 +69,7 @@ class Fish(commands.Cog):
             embed.add_field(name = '생선 가격', value = f'생선 가격 : {price}')
             embed.add_field(name = '생선 등급', value = f'생선 등급 : {grade}')
             await ctx.send(embed=embed)
-            money_db[str(ctx.author.id)] = money_db[int(ctx.author.id)] + int(price)
-            money_db.commit()
+            c.execute("UPDATE money SET moneys=? WHERE id=?", (ctx.author.id, int(price)))
         if fish in C_fish_list:
             price = random.randint(100, 300)
             grade = 'C급'
@@ -75,8 +78,7 @@ class Fish(commands.Cog):
             embed.add_field(name = '생선 가격', value = f'생선 가격 : {price}')
             embed.add_field(name = '생선 등급', value = f'생선 등급 : {grade}')
             await ctx.send(embed=embed)
-            money_db[str(ctx.author.id)] = money_db[int(ctx.author.id)] + int(price)
-            money_db.commit()
+            c.execute("UPDATE money SET moneys=? WHERE id=?", (ctx.author.id, int(price)))
 
 
     
